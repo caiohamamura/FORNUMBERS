@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+         <changeSet id="ImportProduction checks whether they exists2" author="Caio">
+         <createProcedure>
+ALTER PROC [dbo].[ImportProduction]
+	@userID VARCHAR(100),
+	@updateExisting bit = 0
+AS
+BEGIN
+
+SET NOCOUNT ON
+
+DECLARE @msg NVARCHAR(MAX)
+DECLARE @newValues BIT = 0
+-- New County?
+	EXEC NewValues @userId, 'County', 'County', 'Code', @newValues = @msg OUTPUT
+	IF @msg != ''
+	BEGIN
+		PRINT @msg
+		SET @msg = ''
+		SET @newValues = 1
+	END
+
+-- New Product?
+	EXEC NewProduct @userId, @msg = @msg OUTPUT
+	IF @msg != ''
+	BEGIN
+		PRINT @msg
+		SET @msg = ''
+		SET @newValues = 1
+	END
+
+	-- New Type?
+	EXEC NewValues @userId, 'Type', 'Type', 'Description', @newValues = @msg OUTPUT
+	IF @msg != ''
+	BEGIN
+		PRINT @msg
+		SET @msg = ''
+		SET @newValues = 1
+	END
+    
+    	-- New Unit?
+	EXEC NewValues @userId, 'UnitSynonym', 'Unit', 'Description', @newValues = @msg OUTPUT
+	IF @msg != ''
+	BEGIN
+		PRINT @msg
+		SET @msg = ''
+		SET @newValues = 1
+	END
+
+	IF @newValues = 1
+	RETURN
+
+
+	DECLARE @table TABLE (County INT
+	  ,[Product] NVARCHAR (100)
+      ,[Type] NVARCHAR(30)
+      ,[Year] Int 
+      ,[Unit] NVARCHAR(50)
+      ,[Amount] NVARCHAR(100)
+      ,[Value] money)
+
+INSERT INTO @table EXEC('SELECT County, Product, Type, Year, Max(Unit), MAX(Amount), MAX(Value) FROM '+@userId+'Temp
+GROUP BY County, Product, Type, Year')
+
+DECLARE @table2 TABLE ([Product] INT
+      ,[Year] INT
+      ,[County] Int 
+      ,[NominalValue] money
+      ,[Amount] int
+      ,[Unit] int
+	  )
+	
+
+INSERT INTO @table2([Product]
+      ,[Year]
+      ,[County]
+      ,[NominalValue]
+      ,[Amount]
+      ,[Unit])
+SELECT Product.OID Product
+      ,[Year]
+      ,County.OID County
+      ,MAX(Value) NominalValue
+      ,MAX(Amount) Amount
+      ,MAX(UnitSynonym.Unit) Unit
+      FROM @table A
+      JOIN Type ON ISNULL(A.Type,'') = ISNULL(Type.Description,'') COLLATE SQL_Latin1_General_Cp1_CI_AI
+      JOIN Product ON A.Product = Product.Description COLLATE SQL_Latin1_General_Cp1_CI_AI AND ISNULL(Type.OID,-1) = ISNULL(Product.Type,-1)
+      JOIN County ON A.County = County.Code
+      JOIN UnitSynonym ON A.Unit = UnitSynonym.Description COLLATE SQL_Latin1_General_Cp1_CI_AI
+      GROUP BY Product.OID, Year, County.OID
+
+
+INSERT INTO Production (Product, Unit, Year, County, Amount, NominalValue)
+SELECT 
+Product, Unit, Year, County, Amount, NominalValue 
+FROM @table2 A 
+WHERE (Amount != 0 OR NominalValue != 0) AND NOT EXISTS (
+SELECT Product, Year, County FROM Production D WHERE D.Product = A.Product AND D.Year = A.YEAR AND D.County = A.County)
+IF @updateExisting = 1
+	BEGIN
+		UPDATE Production
+		SET NominalValue=A.NominalValue, Unit=A.Unit, Amount=A.Amount
+		FROM @table2 A JOIN Production P ON A.Product = P.Product AND A.County = P.County AND A.Year = P.Year
+	END
+END
+                  </createProcedure>
+                  <rollback>
+                  <createProcedure>
+                  ALTER PROC [dbo].[ImportProduction]
+	@userID VARCHAR(100),
+	@updateExisting bit = 0
+AS
+BEGIN
+
+SET NOCOUNT ON
+EXEC('
+DECLARE @msg VARCHAR(MAX)
+
+-- Check for new products --
+SELECT PRODUCTCODE Code, PRODUCT Description, Type
+INTO ['+@userID+'ProdTemp]
+FROM (SELECT PRODUCTCODE, PRODUCT, Type
+FROM ['+@userID+'Temp]
+EXCEPT
+SELECT Code, Description, Type
+FROM Product) A
+
+SELECT @msg = COALESCE(@msg + '', '','''')+REPLACE(RTRIM(REPLACE(LTRIM(STR([Code],10,5)),''0'','' '')),'' '',''0'')+'' - ''+Description+''(''+Type+'')'' FROM ['+@userID+'ProdTemp]
+PRINT ''Products added:''+CHAR(10)+@msg
+
+INSERT INTO Product(Code, Description, Type)
+SELECT Code, Description, Type
+FROM ['+@userID+'ProdTemp]
+
+IF (OBJECT_ID(''[' + @userID + 'ProdTemp]'') is not null)
+	DROP TABLE ['+@userID+'ProdTemp]
+
+INSERT INTO Production (Product, MeasurementUnit, Year, County, Amount)
+SELECT B.OID, UNIT, YEAR,  C.OID County, AMOUNT
+FROM ['+@userID+'Temp] A, Product B, County C
+WHERE B.Code = A.PRODUCTCODE AND B.Description = A.PRODUCT AND B.Type = A.TYPE AND A.VALUE IS NULL AND A.COUNTY = C.Code AND C.MicroRegion IS NOT NULL
+AND NOT EXISTS (
+SELECT Product, Year, County FROM Production D WHERE D.Product = B.OID AND D.Year = A.YEAR AND D.County = C.OID)
+
+INSERT INTO Production (Product, Year, County, NominalValue)
+SELECT B.OID, YEAR,  C.OID County, VALUE
+FROM ['+@userID+'Temp] A, Product B, County C
+WHERE B.Code = A.PRODUCTCODE AND B.Description = A.PRODUCT AND B.Type = A.TYPE AND A.AMOUNT IS NULL AND A.COUNTY = C.Code AND C.MicroRegion IS NOT NULL
+AND NOT EXISTS (
+SELECT Product, Year, County FROM Production D WHERE D.Product = B.OID AND D.Year = A.YEAR AND D.County = C.OID)
+
+INSERT INTO Production (Product, MeasurementUnit, Year, County, Amount, NominalValue)
+SELECT B.OID, UNIT, YEAR, C.OID County, AMOUNT, VALUE
+FROM ['+@userID+'Temp] A, Product B, County C
+WHERE B.Code = A.PRODUCTCODE AND B.Description = A.PRODUCT AND B.Type = A.TYPE AND A.AMOUNT IS NOT NULL AND A.VALUE IS NOT NULL AND A.COUNTY = C.Code AND C.MicroRegion IS NOT NULL
+AND NOT EXISTS (
+SELECT Product, Year, County FROM Production D WHERE D.Product = B.OID AND D.Year = A.YEAR AND D.County = C.OID)
+
+
+IF '+@updateExisting+' = 1
+	BEGIN
+		UPDATE Production
+		SET MeasurementUnit=UNIT, Amount=A.AMOUNT
+		FROM ['+@userID+'Temp] A, Product B, County C
+		WHERE B.Code = A.PRODUCTCODE AND B.Description = A.PRODUCT AND B.Type = A.TYPE AND A.VALUE IS NULL AND A.COUNTY = C.Code AND C.MicroRegion IS NOT NULL
+		AND Production.Product = B.OID AND Production.Year = A.YEAR AND Production.County = C.OID
+
+		UPDATE Production
+		SET NominalValue=VALUE
+		FROM ['+@userID+'Temp] A, Product B, County C
+		WHERE B.Code = A.PRODUCTCODE AND B.Description = A.PRODUCT AND B.Type = A.TYPE AND A.AMOUNT IS NULL AND A.COUNTY = C.Code AND C.MicroRegion IS NOT NULL
+		AND Production.Product = B.OID AND Production.Year = A.YEAR AND Production.County = C.OID
+
+		UPDATE Production
+		SET NominalValue=VALUE, MeasurementUnit=UNIT, Amount=A.AMOUNT
+		FROM ['+@userID+'Temp] A, Product B, County C
+		WHERE B.Code = A.PRODUCTCODE AND B.Description = A.PRODUCT AND B.Type = A.TYPE AND A.AMOUNT IS NOT NULL AND A.VALUE IS NOT NULL AND A.COUNTY = C.Code AND C.MicroRegion IS NOT NULL
+		AND Production.Product = B.OID AND Production.Year = A.YEAR AND Production.County = C.OID
+	END
+
+')
+
+END
+                  </createProcedure>
+                  </rollback>
+         </changeSet>
+</databaseChangeLog>

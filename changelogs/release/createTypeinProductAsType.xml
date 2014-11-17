@@ -33,27 +33,32 @@
         <sql>
         UPDATE Product SET TypeTemp = Type.OID FROM Type WHERE Type.Description = 'Silvicultura' AND Product.Type = 'Plantada'
         </sql>
+        <dropIndex indexName="unique_Product" tableName="Product"/>
         <dropColumn tableName="Product" columnName="Type"/>
         <addColumn
         tableName="Product">
         <column name="Type"
         type="INT">
-        <constraints foreignKeyName="FK_Production_Type_OID" references="Type(OID)" deleteCascade="true"/>
+        <constraints nullable="true" foreignKeyName="FK_Product_Type" references="Type(OID)" deleteCascade="true"/>
         </column>
         </addColumn>
         <sql>
         UPDATE Product SET Type = TypeTemp
         </sql>
         <dropColumn tableName="Product" columnName="TypeTemp"/>
+        <addUniqueConstraint constraintName="unique_Product" tableName="Product" columnNames="Code, Description, Type"/>
         <rollback>
-        <dropForeignKeyConstraint baseTableName="Production" constraintName="FK_Production_Type_OID"/>
+        <dropForeignKeyConstraint baseTableName="Product" constraintName="FK_Product_Type"/>
         <modifyDataType 
         tableName="Product"
         columnName="Type"
         newDataType="VARCHAR(30)"
         />
         <sql>
-        UPDATE Product Type = Type.Description FROM Type JOIN Product ON Type.OID = Product.Type
+        UPDATE Product SET Type = Type.Description FROM Type JOIN Product ON Type.OID = Product.Type
+        </sql>
+        <sql>
+        UPDATE Product SET Type = 'Plantada' WHERE Type = 'Silvicultura'
         </sql>
         <dropTable tableName="Type"/>
         </rollback>

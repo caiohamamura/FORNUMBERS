@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog 
+xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
+http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+<changeSet id="ArrumaViewProduction" author="Caio">
+<sql>
+ALTER VIEW [dbo].[Production_view] AS
+SELECT Product, Unit, P.[Year]
+      ,[County]
+	  ,[Amount]
+      ,[NominalValue]
+	  ,Round((NominalValue*[Index]),2) AS RealValue
+	  ,[User]
+FROM Production P, [Inflation_view] IV
+WHERE P.Year = IV.Year
+</sql>
+</changeSet>
+
+</databaseChangeLog>

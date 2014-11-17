@@ -11,15 +11,17 @@
          tableName="Production">
          <column name="Unit"
          type="INT">
-         <constraints foreignKeyName="FK_Production_Unit_TimberUnit_OID" references="TimberUnit(OID)" deleteCascade="true"/>
+         <constraints foreignKeyName="FK_Production_Unit_TimberUnit" references="TimberUnit(OID)" deleteCascade="true"/>
          </column>
          </addColumn>
          <sql>
          UPDATE Production
          SET Unit = UnitSynonym.Unit 
-         FROM UnitSynonym JOIN Production ON MeasurementUnit = UnitSynonym.Description COLLATE SQL_Latin1_General_Cp1_CI_AI
+         FROM UnitSynonym JOIN Production ON UnitSynonym.Description = MeasurementUnit COLLATE SQL_Latin1_General_Cp1_CI_AI
          </sql>
+         <dropIndex indexName="Unique_Production" tableName="Production"/>
          <dropColumn tableName="Production" columnName="MeasurementUnit"/>
+         <addUniqueConstraint constraintName="Unique_Production" tableName="Production" columnNames="Product, County, Year, Unit"/>
          <rollback>
          <addColumn
          tableName="Production">
@@ -30,7 +32,13 @@
          <sql>UPDATE Production SET MeasurementUnit = TimberUnit.Description
          FROM TimberUnit JOIN Production ON TimberUnit.OID = Production.Unit</sql>
          <dropForeignKeyConstraint baseTableName="Production" constraintName="FK_Production_Unit_TimberUnit_OID"/>
+         <dropUniqueConstraint tableName="Production" constraintName="Unique_Production"/>
          <dropColumn tableName="Production" columnName="Unit"/>
+         <addUniqueConstraint constraintName="Unique_Production" tableName="Production" columnNames="Product, County, Year, MeasurementUnit"/>
          </rollback>
+         </changeSet>
+         <changeSet id="ChangeUniqueInProductionUnit" author="Caio">
+         <dropUniqueConstraint tableName="Production" constraintName="Unique_Production"/>
+         <addUniqueConstraint constraintName="Unique_Production" tableName="Production" columnNames="Product, County, Year"/>
          </changeSet>
 </databaseChangeLog>

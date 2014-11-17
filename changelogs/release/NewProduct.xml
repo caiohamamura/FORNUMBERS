@@ -6,7 +6,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
 http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-<changeSet id="CreateProcNewProduct" author="Caio">
+<changeSet id="CreateProcNewProduct2" author="Caio">
 <createProcedure procedureName="NewProduct">
 -- =============================================
 -- Author:		Caio Hamamura
@@ -32,7 +32,7 @@ DECLARE @msg NVARCHAR(max)
 SELECT DISTINCT Product, Type INTO [##Temp'+@userId+'] FROM ['+@userId+'temp] A
 				WHERE NOT EXISTS (
 				SELECT B.Description, C.Description 
-                FROM Product B JOIN Type C ON Product.Type = Type.OID
+                FROM Product B JOIN Type C ON ISNULL(B.Type,-1) = ISNULL(C.OID,-1)
 				WHERE ISNULL(A.Type,'''') = ISNULL(C.Description,'''') COLLATE SQL_Latin1_General_Cp1_CI_AI AND A.Product = B.Description COLLATE SQL_Latin1_General_Cp1_CI_AI)
 
 DECLARE @check INT = (SELECT Count(*) FROM [##Temp'+@userId+'])
@@ -55,6 +55,10 @@ IF (OBJECT_ID('tempdb..##helper'+ @userId) is not null)
 		END
 END
 </createProcedure>
+<rollback>
+<sql>
+DROP PROCEDURE dbo.NewProduct
+</sql>
+</rollback>
 </changeSet>
-
 </databaseChangeLog>
