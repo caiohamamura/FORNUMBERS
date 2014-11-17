@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+        <changeSet id="addTypeinProductAsType" author="Caio">
+        <createTable tableName="Type">
+        <column name="OID"
+        type="INT"
+        autoIncrement="true">
+        <constraints primaryKey="true"/>
+        </column>
+        <column name="Description"
+        type="VARCHAR(30)">
+        </column>
+        </createTable>
+        <insert 
+        tableName="Type">
+        <column name="Description" value="Silvicultura"/>
+        </insert>
+        <insert 
+        tableName="Type">
+        <column name="Description" value="Extrativismo"/>
+        </insert>
+        <addColumn
+        tableName="Product">
+        <column name="TypeTemp"
+        type="INT">
+        </column>
+        </addColumn>
+        <sql>
+        UPDATE Product SET TypeTemp = Type.OID FROM Type WHERE Type.Description = 'Silvicultura' AND Product.Type = 'Plantada'
+        </sql>
+        <dropColumn tableName="Product" columnName="Type"/>
+        <addColumn
+        tableName="Product">
+        <column name="Type"
+        type="INT">
+        <constraints foreignKeyName="FK_Production_Type_OID" references="Type(OID)" deleteCascade="true"/>
+        </column>
+        </addColumn>
+        <sql>
+        UPDATE Product SET Type = TypeTemp
+        </sql>
+        <dropColumn tableName="Product" columnName="TypeTemp"/>
+        <rollback>
+        <dropForeignKeyConstraint baseTableName="Production" constraintName="FK_Production_Type_OID"/>
+        <modifyDataType 
+        tableName="Product"
+        columnName="Type"
+        newDataType="VARCHAR(30)"
+        />
+        <sql>
+        UPDATE Product Type = Type.Description FROM Type JOIN Product ON Type.OID = Product.Type
+        </sql>
+        <dropTable tableName="Type"/>
+        </rollback>
+        </changeSet>
+</databaseChangeLog>

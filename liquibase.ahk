@@ -9,7 +9,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ;;;HOTSTRINGS;;;
 :*:<CP>::
-SendInput, {Raw}<createProcedure procedureName="">`r`r<createProcedure/>
+SendInput, {Raw}<createProcedure procedureName="">`r`r</createProcedure>
 GoUp(2,2)
 Return
 

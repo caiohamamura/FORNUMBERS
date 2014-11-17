@@ -38,7 +38,7 @@ SELECT DISTINCT Product, Type INTO [##Temp'+@userId+'] FROM ['+@userId+'temp] A
 DECLARE @check INT = (SELECT Count(*) FROM [##Temp'+@userId+'])
 IF @check != 0
     BEGIN
-        SELECT @msg = COALESCE(@msg + CHAR(10),'''')+''Product/Type: ''+ISNULL(State,''null'')+''/''+ISNULL('+@columnName+',''null'')+''/''+ISNULL(Source,''null'') FROM [##Temp'+@userId+']
+        SELECT @msg = COALESCE(@msg + CHAR(10),'''')+''Product/Type: ''+ISNULL(Product,''null'')+''/''+ISNULL(Type,''null'') FROM [##Temp'+@userId+']
 	    SELECT ''Product/Type not found. Please, check spelling or add them manually in Product and Type tables:''+CHAR(10)+@msg+CHAR(10) AS MSG INTO [##helper'+@userID+']
     END
 DROP TABLE [##Temp'+@userId+']
@@ -54,7 +54,7 @@ IF (OBJECT_ID('tempdb..##helper'+ @userId) is not null)
 			EXEC('DROP TABLE [##helper'+@userID+']')
 		END
 END
-<createProcedure/>
+</createProcedure>
 </changeSet>
 
 </databaseChangeLog>
