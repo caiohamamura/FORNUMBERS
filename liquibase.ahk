@@ -8,6 +8,11 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 ;;;HOTSTRINGS;;;
+:*:<CP>::
+SendInput, {Raw}<createProcedure procedureName="">`r`r<createProcedure/>
+GoUp(2,2)
+Return
+
 :*:<AUC>::
 SendInput, {Raw}<addUniqueConstraint tableName="" columnNames=""/>
 GoUp(0,18)
