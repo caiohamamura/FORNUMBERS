@@ -16,11 +16,10 @@
          </addColumn>
          <sql>
          UPDATE Production
-         SET Unit = UnitSynonym.Unit
-         UnitSynonym JOIN Production ON MeasurementUnit = UnitSynonym.Description COLLATE SQL_Latin1_General_Cp1_CI_AI
+         SET Unit = UnitSynonym.Unit 
+         FROM UnitSynonym JOIN Production ON MeasurementUnit = UnitSynonym.Description COLLATE SQL_Latin1_General_Cp1_CI_AI
          </sql>
          <dropColumn tableName="Production" columnName="MeasurementUnit"/>
-         </changeSet>
          <rollback>
          <addColumn
          tableName="Production">
@@ -33,4 +32,5 @@
          <dropForeignKeyConstraint baseTableName="Production" constraintName="FK_Production_Unit_TimberUnit_OID"/>
          <dropColumn tableName="Production" columnName="Unit"/>
          </rollback>
+         </changeSet>
 </databaseChangeLog>

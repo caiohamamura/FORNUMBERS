@@ -8,6 +8,16 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 ;;;HOTSTRINGS;;;
+:*:<AUC>::
+SendInput, {Raw}<addUniqueConstraint tableName="" columnNames=""/>
+GoUp(0,18)
+Return
+
+:*:<DUC>::
+SendInput, {Raw}<dropUniqueConstraint tableName="" constraintName=""/>
+GoUp(0,21)
+Return
+
 :*:<DFK>::
 SendInput, {Raw}<dropForeignKeyConstraint baseTableName="" constraintName=""/>
 GoUp(0,21)
