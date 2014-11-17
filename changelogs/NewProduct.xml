@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog 
+xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
+http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+<changeSet id="CreateProcNewProduct" author="Caio">
+<createProcedure procedureName="NewProduct">
+-- =============================================
+-- Author:		Caio Hamamura
+-- Create date: 17/11/2014
+-- Description:	Check if import table has new Products
+-- =============================================
+CREATE PROCEDURE [dbo].[NewProduct] 
+	-- Add the parameters for the stored procedure here
+	@userId NVARCHAR(100) = 0,
+	@msg NVARCHAR(MAX) OUTPUT
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	--
+-- Check region
+--
+EXEC('
+DECLARE @msg NVARCHAR(max)
+SELECT DISTINCT Product, Type INTO [##Temp'+@userId+'] FROM ['+@userId+'temp] A
+				WHERE NOT EXISTS (
+				SELECT B.Description, C.Description 
+                FROM Product B JOIN Type C ON Product.Type = Type.OID
+				WHERE ISNULL(A.Type,'''') = ISNULL(C.Description,'''') COLLATE SQL_Latin1_General_Cp1_CI_AI AND A.Product = B.Description COLLATE SQL_Latin1_General_Cp1_CI_AI)
+
+DECLARE @check INT = (SELECT Count(*) FROM [##Temp'+@userId+'])
+IF @check != 0
+    BEGIN
+        SELECT @msg = COALESCE(@msg + CHAR(10),'''')+''Product/Type: ''+ISNULL(State,''null'')+''/''+ISNULL('+@columnName+',''null'')+''/''+ISNULL(Source,''null'') FROM [##Temp'+@userId+']
+	    SELECT ''Product/Type not found. Please, check spelling or add them manually in Product and Type tables:''+CHAR(10)+@msg+CHAR(10) AS MSG INTO [##helper'+@userID+']
+    END
+DROP TABLE [##Temp'+@userId+']
+')
+IF (OBJECT_ID('tempdb..##helper'+ @userId) is not null)
+		BEGIN 
+			DECLARE @sqlString NVARCHAR(MAX)
+			SET @sqlString = N'SELECT @saida = MSG FROM [##helper'+ @userId+']'
+			EXEC sp_executesql
+			@sqlString,
+			N'@saida varchar(MAX) OUTPUT',
+			@saida=@msg OUTPUT 
+			EXEC('DROP TABLE [##helper'+@userID+']')
+		END
+END
+<createProcedure/>
+</changeSet>
+
+</databaseChangeLog>
