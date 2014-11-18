@@ -8,6 +8,11 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 ;;;HOTSTRINGS;;;
+:*:<init>::
+SendInput, {Raw}<?xml version="1.0" encoding="UTF-8"?>`r`r<databaseChangeLog`r  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"`r  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"`r  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog`r         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">`r`r</databaseChangeLog>
+GoUp(1,0)
+Return
+
 :*:<rollback>::
 SendInput, {Raw}<rollback>`r<sql>`r`r</sql>`r</rollback>
 GoUp(2,0)
