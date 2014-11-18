@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+               http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+               <changeSet id="EditLPMesoView" author="Caio">
+               <sql>
+ALTER VIEW LandPriceMeso_View AS
+               SELECT LP.OID OID
+,LP.Year
+,LP.LandUse
+,LP.MesoRegion
+,LP.Obs MicroRegion
+,NominalPrice
+,Round(NominalPrice*IV.[Index],2) RealPrice
+,Appraisal
+,IV.[User]
+FROM LandPrice LP 
+JOIN Inflation_view IV ON LP.Year = IV.Year
+</sql>               
+               </changeSet>
+               </databaseChangeLog>
