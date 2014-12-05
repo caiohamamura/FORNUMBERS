@@ -10,5 +10,9 @@
         <include file="/changelogs/release/UnitInProduction.xml"/>
         <include file="/changelogs/release/ImportProduction.xml"/>
         <include file="/changelogs/release/NewProduct.xml"/>
+<<<<<<< HEAD
         <include file="/changelogs/release/ArrumaViewProduction.xml"/>
+=======
+        <include file="/changelogs/release/EditLPMesoView.xml"/>
+>>>>>>> 1ca2214eac415a84e0b7eef9cbd7bdd72e54ccad
 </databaseChangeLog>
