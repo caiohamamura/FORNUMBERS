@@ -10,4 +10,5 @@
         <include file="/changelogs/release/UnitInProduction.xml"/>
         <include file="/changelogs/release/ImportProduction.xml"/>
         <include file="/changelogs/release/NewProduct.xml"/>
+        <include file="/changelogs/release/ArrumaViewProduction.xml"/>
 </databaseChangeLog>
